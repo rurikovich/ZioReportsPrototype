@@ -11,8 +11,9 @@ object Hello1 extends App {
   val server: ZIO[ZEnv, Throwable, Unit] = ZIO.runtime[ZEnv]
     .flatMap {
       implicit rts =>
-        BlazeServerBuilder[Task]
-          .bindHttp(8080, "localhost")
+        BlazeServerBuilder
+          .apply[Task](rts.platform.executor.asEC)
+          .bindHttp(8081, "localhost")
           .withHttpApp(Hello1Service.service)
           .serve
           .compile
