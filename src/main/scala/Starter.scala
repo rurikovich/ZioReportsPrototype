@@ -1,12 +1,16 @@
+import controllers.ReportService
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
+import org.http4s.server.Router
 import org.http4s.server.blaze._
 import zio._
 import zio.interop.catz._
 import zio.interop.catz.implicits._
 
-object Hello1 extends App {
+object Starter extends App {
+
+  val baseUrl = "http://localhost:8080"
 
   val server: ZIO[ZEnv, Throwable, Unit] = ZIO.runtime[ZEnv]
     .flatMap {
@@ -14,7 +18,11 @@ object Hello1 extends App {
         BlazeServerBuilder
           .apply[Task](rts.platform.executor.asEC)
           .bindHttp(8081, "localhost")
-          .withHttpApp(Hello1Service.service)
+          .withHttpApp {
+            Router[Task](
+              "/reports" -> ReportService.routes(s"${baseUrl}/reports")
+            ).orNotFound
+          }
           .serve
           .compile
           .drain
@@ -24,12 +32,6 @@ object Hello1 extends App {
     server.fold(_ => zio.ExitCode(1), _ => zio.ExitCode(0))
 }
 
-object Hello1Service {
 
-  private val dsl = Http4sDsl[Task]
-  import dsl._
 
-  val service = HttpRoutes.of[Task] {
-    case GET -> Root => Ok("hello!")
-  }.orNotFound
-}
+
