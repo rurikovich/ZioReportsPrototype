@@ -4,13 +4,16 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
-import repository.ReportRepository
+import repository.{ReportRepository, ReportRepositoryModule}
 import zio._
 
 object ReportService {
 
   def routes[R <: ReportRepository](rootUri: String): HttpRoutes[Task[*]] = {
+
     type ReportTask[A] = RIO[R, A]
+
+
 
     val dsl: Http4sDsl[ReportTask] = Http4sDsl[ReportTask]
     import dsl._
@@ -22,13 +25,13 @@ object ReportService {
     HttpRoutes.of[ReportTask] {
       case GET -> Root / LongVar(id) =>
         for {
-          todo     <- ReportRepository.getById(id)
+          todo     <- ReportRepositoryModule.getById(id)
           response <- todo.fold(NotFound())(x => Ok( x))
         } yield response
 
-
-
     }
+
+
   }
 
 

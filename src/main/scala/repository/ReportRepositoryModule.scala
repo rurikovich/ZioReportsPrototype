@@ -1,11 +1,11 @@
 package repository
 
-import zio.{UIO, URIO, ZIO}
+import zio.{Task, URIO, ZIO}
 
-object ReportRepository {
+object ReportRepositoryModule {
 
   trait Service extends Serializable {
-    def getById(id: Long): UIO[Option[Report]]
+    def getById(id: Long): Task[Option[Report]]
   }
 
   def getById(id: Long): URIO[ReportRepository, Option[Report]] = ZIO.accessM(_.get.getById(id))
