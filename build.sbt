@@ -1,17 +1,55 @@
+addCommandAlias("build", "prepare; test")
+addCommandAlias("prepare", "fix; fmt")
+addCommandAlias("check", "fixCheck; fmtCheck")
+addCommandAlias("fix", "all compile:scalafix test:scalafix")
+addCommandAlias(
+  "fixCheck",
+  "compile:scalafix --check; test:scalafix --check"
+)
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias(
+  "fmtCheck",
+  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
+)
 
-val Http4sVersion = "0.20.0"
-val CatsVersion = "2.0.0"
-val ZioCatsVersion = "2.0.0.0-RC3"
-val ZioVersion = "1.0.0-RC13"
-val LogbackVersion = "1.2.3"
+scalafixDependencies in ThisBuild += "com.nequissimus" %% "sort-imports" % "0.5.4"
 
 lazy val root = (project in file("."))
+  .enablePlugins(JavaAppPackaging, DockerSpotifyClientPlugin)
   .settings(
-    organization := "example",
-    name := "ZioReportsPrototype",
-    version := "0.0.1-SNAPSHOT",
+    packageName in Docker := "zio-todo",
+    dockerUsername in Docker := Some("grumpyraven"),
+    dockerExposedPorts in Docker := Seq(8080),
+    organization := "com.schuwalow",
+    name := "zio-todo-backend",
+    maintainer := "maxim.schuwalow@gmail.com",
+    licenses := Seq(
+      "MIT" -> url(
+        s"https://github.com/mschuwalow/${name.value}/blob/v${version.value}/LICENSE"
+      )
+    ),
     scalaVersion := "2.13.3",
-    scalacOptions ++= Seq("-Ypartial-unification"),
+    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+    scalacOptions := Seq(
+      "-feature",
+      "-deprecation",
+      "-explaintypes",
+      "-unchecked",
+      "-encoding",
+      "UTF-8",
+      "-language:higherKinds",
+      "-language:existentials",
+      "-Xfatal-warnings",
+      "-Xlint:-byname-implicit,_",
+      "-Ywarn-value-discard",
+      "-Ywarn-numeric-widen",
+      "-Ywarn-extra-implicit",
+      "-Ywarn-unused"
+    ) ++ (if (isSnapshot.value) Seq.empty
+          else
+            Seq(
+              "-opt:l:inline"
+            )),
     libraryDependencies ++= Seq(
       "org.http4s"                   %% "http4s-blaze-server" % "0.21.7",
       "org.http4s"                   %% "http4s-circe"        % "0.21.7",
@@ -37,24 +75,49 @@ lazy val root = (project in file("."))
       "com.github.pureconfig"        %% "pureconfig"          % "0.14.0",
       "com.lihaoyi"                  %% "sourcecode"          % "0.2.1",
       compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-      compilerPlugin(("org.typelevel" % "kind-projector"      % "0.11.0").cross(CrossVersion.full))
+      compilerPlugin(("org.typelevel" % "kind-projector"      % "0.11.0").cross(CrossVersion.full)),
+      compilerPlugin(scalafixSemanticdb)
     )
-
   )
 
-scalacOptions := Seq(
-  "-feature",
-  "-deprecation",
-  "-explaintypes",
-  "-unchecked",
-  "-encoding",
-  "UTF-8",
-  "-language:higherKinds",
-  "-language:existentials",
-  "-Xfatal-warnings",
-  "-Xlint:-byname-implicit,_",
-  "-Ywarn-value-discard",
-  "-Ywarn-numeric-widen",
-  "-Ywarn-extra-implicit",
-  "-Ywarn-unused"
-) ++ (if (isSnapshot.value) Seq.empty else Seq("-opt:l:inline"))
+//release
+{
+  import ReleaseTransformations._
+  import ReleasePlugin.autoImport._
+  import sbtrelease.{ Git, Utilities }
+  import Utilities._
+
+  val releaseBranch = "develop"
+  val mergeBranch   = "master"
+
+  val mergeReleaseVersion = ReleaseStep(action = st => {
+    val git = st.extract.get(releaseVcs).get.asInstanceOf[Git]
+    st.log.info(s"####### current branch: $releaseBranch")
+    git.cmd("checkout", mergeBranch) ! st.log
+    st.log.info(s"####### pull $mergeBranch")
+    git.cmd("pull") ! st.log
+    st.log.info(s"####### merge")
+    git.cmd("merge", releaseBranch, "--no-ff", "--no-edit") ! st.log
+    st.log.info(s"####### push")
+    git.cmd("push", "origin", s"$mergeBranch:$mergeBranch") ! st.log
+    st.log.info(s"####### checkout $releaseBranch")
+    git.cmd("checkout", releaseBranch) ! st.log
+    st
+  })
+
+  releaseProcess := Seq(
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    runTest,
+    setReleaseVersion,
+    commitReleaseVersion,
+    pushChanges,
+    tagRelease,
+    mergeReleaseVersion,
+    ReleaseStep(releaseStepTask(publish in Docker)),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  )
+}
