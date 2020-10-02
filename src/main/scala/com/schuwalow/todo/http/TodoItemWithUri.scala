@@ -8,9 +8,7 @@ import com.schuwalow.todo._
 final case class TodoItemWithUri(
   id: Long,
   url: String,
-  title: String,
-  completed: Boolean,
-  order: Option[Int])
+  body: String)
 
 object TodoItemWithUri {
 
@@ -21,9 +19,7 @@ object TodoItemWithUri {
     TodoItemWithUri(
       todoItem.id,
       s"$basePath/${todoItem.id}",
-      todoItem.item.title,
-      todoItem.item.completed,
-      todoItem.item.order
+      todoItem.body
     )
 
   implicit val encoder: Encoder[TodoItemWithUri] = deriveEncoder

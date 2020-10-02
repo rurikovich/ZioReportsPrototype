@@ -1,9 +1,7 @@
-package com.schuwalow.todo.testing
-
-import zio._
+package com.schuwalow.todo.repository
 
 import com.schuwalow.todo._
-import com.schuwalow.todo.repository.ReportsRepository
+import zio._
 
 final private class InMemoryTodoRepository(
                                             ref: Ref[Map[Long, Report]],

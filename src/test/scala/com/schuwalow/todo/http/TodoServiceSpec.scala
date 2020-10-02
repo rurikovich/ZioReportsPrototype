@@ -9,8 +9,7 @@ import org.http4s.{Status, _}
 import zio._
 import zio.interop.catz._
 import zio.test._
-import com.schuwalow.todo.repository.{ReportsRepository}
-import com.schuwalow.todo.testing.InMemoryTodoRepository
+import com.schuwalow.todo.repository.{InMemoryTodoRepository, ReportsRepository}
 
 object TodoServiceSpec extends DefaultRunnableSpec {
   type TodoTask[A] = RIO[ReportsRepository, A]
