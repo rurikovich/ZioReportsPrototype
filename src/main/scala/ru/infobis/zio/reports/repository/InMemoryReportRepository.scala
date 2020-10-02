@@ -1,6 +1,6 @@
-package com.schuwalow.todo.repository
+package ru.infobis.zio.reports.repository
 
-import com.schuwalow.todo._
+import ru.infobis.zio.reports._
 import zio._
 
 final private class InMemoryReportRepository(ref: Ref[Map[Long, Report]])

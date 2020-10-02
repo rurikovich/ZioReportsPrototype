@@ -1,6 +1,6 @@
-package com.schuwalow.todo.repository
+package ru.infobis.zio.reports.repository
 
-import com.schuwalow.todo.Report
+import ru.infobis.zio.reports.Report
 import zio._
 
 object ReportsRepository extends Serializable {

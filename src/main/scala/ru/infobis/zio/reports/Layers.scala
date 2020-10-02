@@ -1,12 +1,13 @@
-package com.schuwalow.todo
+package ru.infobis.zio.reports
 
 import zio.ZLayer
 import zio.blocking.Blocking
 import zio.logging.Logging
 import zio.logging.slf4j.Slf4jLogger
 
-import com.schuwalow.todo.config._
-import com.schuwalow.todo.repository._
+import ru.infobis.zio.reports.repository._
+import ru.infobis.zio.reports.config.{AppConfig, DatabaseConfig, HttpConfig}
+import ru.infobis.zio.reports.repository.InMemoryReportRepository
 
 object layers {
 

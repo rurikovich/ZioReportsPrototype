@@ -1,4 +1,4 @@
-package com.schuwalow.todo.config
+package ru.infobis.zio.reports.config
 
 import pureconfig._
 import pureconfig.generic.semiauto._

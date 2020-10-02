@@ -1,4 +1,4 @@
-package com.schuwalow.todo.http
+package ru.infobis.zio.reports.http
 
 import org.http4s.{ EntityDecoder, Method, Request, Response, Status, Uri }
 import zio._

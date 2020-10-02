@@ -1,9 +1,9 @@
-package com.schuwalow.todo.http
+package ru.infobis.zio.reports.http
 
 import io.circe.generic.semiauto._
 import io.circe.{ Decoder, Encoder }
 
-import com.schuwalow.todo._
+import ru.infobis.zio.reports._
 
 final case class ReportWithUri(
   id: Long,

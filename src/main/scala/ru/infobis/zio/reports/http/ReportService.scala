@@ -1,13 +1,13 @@
-package com.schuwalow.todo.http
+package ru.infobis.zio.reports.http
 
-import com.schuwalow.todo.Report
 import io.circe.Encoder
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import zio._
 import zio.interop.catz._
-import com.schuwalow.todo.repository._
+import ru.infobis.zio.reports.Report
+import ru.infobis.zio.reports.repository.ReportsRepository
 
 object ReportService {
 

@@ -1,4 +1,4 @@
-package com.schuwalow.todo.http
+package ru.infobis.zio.reports.http
 
 import HTTPSpec._
 import io.circe.literal._
@@ -8,7 +8,7 @@ import org.http4s.{Status, _}
 import zio._
 import zio.interop.catz._
 import zio.test._
-import com.schuwalow.todo.repository.{InMemoryReportRepository, ReportsRepository}
+import ru.infobis.zio.reports.repository.{InMemoryReportRepository, ReportsRepository}
 
 object ReportServiceSpec extends DefaultRunnableSpec {
   type ReportTask[A] = RIO[ReportsRepository, A]

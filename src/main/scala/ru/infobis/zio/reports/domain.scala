@@ -1,4 +1,4 @@
-package com.schuwalow.todo
+package ru.infobis.zio.reports
 
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}

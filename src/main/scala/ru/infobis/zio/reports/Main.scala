@@ -1,4 +1,4 @@
-package com.schuwalow.todo
+package ru.infobis.zio.reports
 
 import cats.effect._
 import fs2.Stream.Compiler._
@@ -10,9 +10,9 @@ import org.http4s.server.middleware.CORS
 import zio.clock.Clock
 import zio.interop.catz._
 import zio.{ExitCode => ZExitCode, _}
+import ru.infobis.zio.reports.config._
 
-import com.schuwalow.todo.config._
-import com.schuwalow.todo.http.ReportService
+import ru.infobis.zio.reports.http.ReportService
 
 
 object Main extends App {
