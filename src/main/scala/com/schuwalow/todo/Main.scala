@@ -9,7 +9,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.CORS
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.{ ExitCode => ZExitCode, _ }
+import zio.{ExitCode => ZExitCode, _}
 
 import com.schuwalow.todo.config._
 import com.schuwalow.todo.http.ReportService
@@ -21,24 +21,21 @@ object Main extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ZExitCode] = {
     val prog =
       for {
-        cfg    <- getAppConfig
-        _      <- logging.log.info(s"Starting with $cfg")
+        cfg <- getAppConfig
+        _ <- logging.log.info(s"Starting with $cfg")
         httpApp = Router[AppTask](
-                    "/reports" -> ReportService.routes(s"${cfg.http.baseUrl}/reports")
-                  ).orNotFound
+          "/reports" -> ReportService.routes()
+        ).orNotFound
 
         _ <- runHttp(httpApp, cfg.http.port)
       } yield ZExitCode.success
 
-    prog
-      .provideSomeLayer[ZEnv](layers.live.appLayer)
-      .orDie
+    prog.provideSomeLayer[ZEnv](layers.live.appLayer).orDie
   }
 
-  def runHttp[R <: Clock](
-    httpApp: HttpApp[RIO[R, *]],
-    port: Int
-  ): ZIO[R, Throwable, Unit] = {
+  def runHttp[R <: Clock](httpApp: HttpApp[RIO[R, *]],
+                          port: Int
+                         ): ZIO[R, Throwable, Unit] = {
     type Task[A] = RIO[R, A]
     ZIO.runtime[R].flatMap { implicit rts =>
       BlazeServerBuilder
@@ -50,4 +47,5 @@ object Main extends App {
         .drain
     }
   }
+
 }
