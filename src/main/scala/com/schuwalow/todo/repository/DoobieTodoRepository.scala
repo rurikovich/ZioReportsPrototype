@@ -15,23 +15,23 @@ import zio.interop.catz._
 import com.schuwalow.todo._
 import com.schuwalow.todo.config._
 
-final private class DoobieTodoRepository(xa: Transactor[Task]) extends TodoRepository.Service {
+final private class DoobieTodoRepository(xa: Transactor[Task]) extends ReportsRepository.Service {
   import DoobieTodoRepository.SQL
 
-  override def getAll: UIO[List[TodoItem]] =
+  override def getAll: UIO[List[Report]] =
     SQL.getAll
       .to[List]
       .transact(xa)
       .orDie
 
-  override def getById(id: TodoId): UIO[Option[TodoItem]] =
+  override def getById(id: Long): UIO[Option[Report]] =
     SQL
       .get(id)
       .option
       .transact(xa)
       .orDie
 
-  override def delete(id: TodoId): UIO[Unit] =
+  override def delete(id: Long): UIO[Unit] =
     SQL
       .delete(id)
       .run
@@ -45,18 +45,18 @@ final private class DoobieTodoRepository(xa: Transactor[Task]) extends TodoRepos
       .unit
       .orDie
 
-  override def create(todoItemForm: TodoItemPostForm): UIO[TodoItem] =
+  override def create(todoItemForm: TodoItemPostForm): UIO[Report] =
     SQL
       .create(todoItemForm.asTodoPayload)
       .withUniqueGeneratedKeys[Long]("ID")
-      .map(id => todoItemForm.asTodoItem(TodoId(id)))
+      .map(id => todoItemForm.asTodoItem(id))
       .transact(xa)
       .orDie
 
   override def update(
-    id: TodoId,
+    id: Long,
     todoItemForm: TodoItemPatchForm
-  ): UIO[Option[TodoItem]] =
+  ): UIO[Option[Report]] =
     (for {
       oldItem <- SQL.get(id).option
       newItem  = oldItem.map(_.update(todoItemForm))
@@ -68,7 +68,7 @@ final private class DoobieTodoRepository(xa: Transactor[Task]) extends TodoRepos
 
 object DoobieTodoRepository {
 
-  def layer: ZLayer[Blocking with DatabaseConfig, Throwable, TodoRepository] = {
+  def layer: ZLayer[Blocking with DatabaseConfig, Throwable, ReportsRepository] = {
     def initDb(cfg: DatabaseConfig.Config): Task[Unit] =
       Task {
         Flyway
@@ -118,28 +118,28 @@ object DoobieTodoRepository {
       VALUES (${todo.title}, ${todo.completed}, ${todo.order})
       """.update
 
-    def get(id: TodoId): Query0[TodoItem] = sql"""
-      SELECT * FROM TODOS WHERE ID = ${id.value}
-      """.query[TodoItem]
+    def get(id: Long): Query0[Report] = sql"""
+      SELECT * FROM TODOS WHERE ID = ${id}
+      """.query[Report]
 
-    val getAll: Query0[TodoItem] = sql"""
+    val getAll: Query0[Report] = sql"""
       SELECT * FROM TODOS
-      """.query[TodoItem]
+      """.query[Report]
 
-    def delete(id: TodoId): Update0 = sql"""
-      DELETE from TODOS WHERE ID = ${id.value}
+    def delete(id: Long): Update0 = sql"""
+      DELETE from TODOS WHERE ID = ${id}
       """.update
 
     val deleteAll: Update0 = sql"""
       DELETE from TODOS
       """.update
 
-    def update(todoItem: TodoItem): Update0 = sql"""
+    def update(todoItem: Report): Update0 = sql"""
       UPDATE TODOS SET
       TITLE = ${todoItem.item.title},
       COMPLETED = ${todoItem.item.completed},
       ORDERING = ${todoItem.item.order}
-      WHERE ID = ${todoItem.id.value}
+      WHERE ID = ${todoItem.id}
       """.update
   }
 }

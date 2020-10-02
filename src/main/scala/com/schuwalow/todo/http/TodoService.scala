@@ -12,7 +12,7 @@ import com.schuwalow.todo.repository._
 
 object TodoService {
 
-  def routes[R <: TodoRepository](rootUri: String): HttpRoutes[RIO[R, ?]] = {
+  def routes[R <: ReportsRepository](rootUri: String): HttpRoutes[RIO[R, ?]] = {
     type TodoTask[A] = RIO[R, A]
 
     val dsl: Http4sDsl[TodoTask] = Http4sDsl[TodoTask]
@@ -25,16 +25,16 @@ object TodoService {
     HttpRoutes.of[TodoTask] {
       case GET -> Root / LongVar(id) =>
         for {
-          todo     <- TodoRepository.getById(TodoId(id))
+          todo     <- ReportsRepository.getById(id)
           response <- todo.fold(NotFound())(x => Ok(TodoItemWithUri(rootUri, x)))
         } yield response
 
       case GET -> Root =>
-        Ok(TodoRepository.getAll.map(_.map(TodoItemWithUri(rootUri, _))))
+        Ok(ReportsRepository.getAll.map(_.map(TodoItemWithUri(rootUri, _))))
 
       case req @ POST -> Root =>
         req.decode[TodoItemPostForm] { todoItemForm =>
-          TodoRepository
+          ReportsRepository
             .create(todoItemForm)
             .map(TodoItemWithUri(rootUri, _))
             .flatMap(Created(_))
@@ -42,19 +42,19 @@ object TodoService {
 
       case DELETE -> Root / LongVar(id) =>
         for {
-          item   <- TodoRepository.getById(TodoId(id))
+          item   <- ReportsRepository.getById(id)
           result <- item
-                      .map(x => TodoRepository.delete(x.id))
+                      .map(x => ReportsRepository.delete(x.id))
                       .fold(NotFound())(_.flatMap(Ok(_)))
         } yield result
 
       case DELETE -> Root =>
-        TodoRepository.deleteAll *> Ok()
+        ReportsRepository.deleteAll *> Ok()
 
       case req @ PATCH -> Root / LongVar(id) =>
         req.decode[TodoItemPatchForm] { updateForm =>
           for {
-            update   <- TodoRepository.update(TodoId(id), updateForm)
+            update   <- ReportsRepository.update(id, updateForm)
             response <- update.fold(NotFound())(x => Ok(TodoItemWithUri(rootUri, x)))
           } yield response
         }

@@ -17,7 +17,7 @@ object layers {
     Layer0Env with HttpConfig with DatabaseConfig
 
   type Layer2Env =
-    Layer1Env with TodoRepository
+    Layer1Env with ReportsRepository
 
   type AppEnv = Layer2Env
 

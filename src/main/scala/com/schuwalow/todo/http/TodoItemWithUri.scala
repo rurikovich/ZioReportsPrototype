@@ -16,11 +16,11 @@ object TodoItemWithUri {
 
   def apply(
     basePath: String,
-    todoItem: TodoItem
+    todoItem: Report
   ): TodoItemWithUri =
     TodoItemWithUri(
-      todoItem.id.value,
-      s"$basePath/${todoItem.id.value}",
+      todoItem.id,
+      s"$basePath/${todoItem.id}",
       todoItem.item.title,
       todoItem.item.completed,
       todoItem.item.order

@@ -13,7 +13,7 @@ import zio.{ ExitCode => ZExitCode, _ }
 
 import com.schuwalow.todo.config._
 import com.schuwalow.todo.http.TodoService
-import com.schuwalow.todo.repository.TodoRepository
+import com.schuwalow.todo.repository.ReportsRepository
 
 object Main extends App {
   type AppTask[A] = RIO[layers.AppEnv with Clock, A]
@@ -24,14 +24,14 @@ object Main extends App {
         cfg    <- getAppConfig
         _      <- logging.log.info(s"Starting with $cfg")
         httpApp = Router[AppTask](
-                    "/todos" -> TodoService.routes(s"${cfg.http.baseUrl}/todos")
+                    "/reports" -> TodoService.routes(s"${cfg.http.baseUrl}/reports")
                   ).orNotFound
 
         _ <- runHttp(httpApp, cfg.http.port)
       } yield ZExitCode.success
 
     prog
-      .provideSomeLayer[ZEnv](TodoRepository.withTracing(layers.live.appLayer))
+      .provideSomeLayer[ZEnv](ReportsRepository.withTracing(layers.live.appLayer))
       .orDie
   }
 
