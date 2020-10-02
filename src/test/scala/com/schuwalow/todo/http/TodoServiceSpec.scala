@@ -9,12 +9,12 @@ import org.http4s.{Status, _}
 import zio._
 import zio.interop.catz._
 import zio.test._
-import com.schuwalow.todo.repository.{InMemoryTodoRepository, ReportsRepository}
+import com.schuwalow.todo.repository.{InMemoryReportRepository, ReportsRepository}
 
 object TodoServiceSpec extends DefaultRunnableSpec {
   type TodoTask[A] = RIO[ReportsRepository, A]
 
-  val app = TodoService.routes[ReportsRepository]("").orNotFound
+  val app = ReportService.routes[ReportsRepository]("").orNotFound
 
   override def spec =
     suite("TodoService")(
@@ -106,5 +106,5 @@ object TodoServiceSpec extends DefaultRunnableSpec {
             ]""")
         )
       }
-    ).provideSomeLayer[ZEnv](InMemoryTodoRepository.layer)
+    ).provideSomeLayer[ZEnv](InMemoryReportRepository.layer)
 }

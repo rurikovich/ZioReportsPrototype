@@ -12,8 +12,8 @@ import zio.interop.catz._
 import zio.{ ExitCode => ZExitCode, _ }
 
 import com.schuwalow.todo.config._
-import com.schuwalow.todo.http.TodoService
-import com.schuwalow.todo.repository.ReportsRepository
+import com.schuwalow.todo.http.ReportService
+
 
 object Main extends App {
   type AppTask[A] = RIO[layers.AppEnv with Clock, A]
@@ -24,14 +24,14 @@ object Main extends App {
         cfg    <- getAppConfig
         _      <- logging.log.info(s"Starting with $cfg")
         httpApp = Router[AppTask](
-                    "/reports" -> TodoService.routes(s"${cfg.http.baseUrl}/reports")
+                    "/reports" -> ReportService.routes(s"${cfg.http.baseUrl}/reports")
                   ).orNotFound
 
         _ <- runHttp(httpApp, cfg.http.port)
       } yield ZExitCode.success
 
     prog
-      .provideSomeLayer[ZEnv](ReportsRepository.withTracing(layers.live.appLayer))
+      .provideSomeLayer[ZEnv](layers.live.appLayer)
       .orDie
   }
 

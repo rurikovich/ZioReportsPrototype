@@ -30,7 +30,7 @@ object layers {
       HttpConfig.fromAppConfig ++ DatabaseConfig.fromAppConfig ++ ZLayer.identity
 
     val layer2: ZLayer[Layer1Env, Throwable, Layer2Env] =
-      InMemoryTodoRepository.layer ++ ZLayer.identity
+      InMemoryReportRepository.layer ++ ZLayer.identity
 
     val appLayer: ZLayer[Blocking, Throwable, AppEnv] =
       layer0 >>> layer1 >>> layer2
