@@ -22,8 +22,9 @@ object ReportService {
     HttpRoutes.of[ReportTask] {
       case GET -> Root / LongVar(id) =>
         for {
-          report <- ReportsRepository.getById(id)
-          response <- report.fold(NotFound())((x: Report) => Ok( x))
+          fiber <- ReportsRepository.getById(id).fork
+          report <- fiber.join
+          response <- report.fold(NotFound())((x: Report) => Ok(x.copy(body=s"fiber.id=${fiber.id.toString}  body=${x.body}")))
         } yield response
     }
 
