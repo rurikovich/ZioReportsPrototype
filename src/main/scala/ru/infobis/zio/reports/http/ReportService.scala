@@ -26,10 +26,21 @@ object ReportService {
         }
 
 
+      case GET -> Root / "interrupt" / LongVar(startTimeMillis) / LongVar(seqNumber) =>
+        interruptReportByFiberId(startTimeMillis, seqNumber).flatMap {
+          _ => Ok(s"fiber id=${Fiber.Id(startTimeMillis, seqNumber)} interrupted.")
+        }
+
 
     }
 
   }
+
+  def interruptReportByFiberId[R <: ReportsRepository](startTimeMillis: Long, seqNumber: Long): UIO[Nothing] = {
+    val fiberid = Fiber.Id(startTimeMillis, seqNumber)
+    ZIO.interruptAs(fiberid)
+  }
+
 
   def getReportById[R <: ReportsRepository](id: Long): URIO[ReportsRepository, Option[Report]] = {
     for {

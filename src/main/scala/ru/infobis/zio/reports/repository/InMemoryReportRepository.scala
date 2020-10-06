@@ -16,12 +16,13 @@ final private class InMemoryReportRepository()
     val startTime = now()
     val endTime = startTime.plusSeconds(secondsToCalculateReport)
 
-    var veryFatVal = (0 to 1000).foldLeft("")((res, i) => res + s"i=${i}_")
+    var veryFatVar = (0 to 1000).foldLeft("")((res, i) => res + s"i=${i}_")
     while (now() isBefore endTime) {
-      veryFatVal = veryFatVal + s"square=${Math.sqrt(111_231)}"
+      veryFatVar = veryFatVar + s"square=${Math.sqrt(111_231)}"
+      println(s"veryFatVar ")
     }
 
-    Some(Report(id, veryFatVal))
+    Some(Report(id, veryFatVar))
   }
 
 }
