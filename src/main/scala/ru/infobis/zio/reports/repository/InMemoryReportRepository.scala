@@ -8,7 +8,7 @@ import zio._
 final private class InMemoryReportRepository()
   extends ReportsRepository.Service {
 
-  val requestDurationInSeconds = 20L
+  val requestDurationInSeconds = 60L
 
   override def getById(id: Long): UIO[Option[Report]] = UIO.succeed(veryLongAndFatReportById(id, requestDurationInSeconds))
 

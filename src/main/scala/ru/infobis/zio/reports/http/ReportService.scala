@@ -23,8 +23,11 @@ object ReportService {
       case GET -> Root / LongVar(id) =>
         for {
           fiber <- ReportsRepository.getById(id).fork
-          report <- fiber.join
-          response <- report.fold(NotFound())((x: Report) => Ok(x.copy(body=s"fiber.id=${fiber.id.toString}  body=${x.body}")))
+          report <- {
+            println(s"id=${id} fiber.id= ${fiber.id}")
+            fiber.join
+          }
+          response <- report.fold(NotFound())((x: Report) => Ok(x))
         } yield response
     }
 
