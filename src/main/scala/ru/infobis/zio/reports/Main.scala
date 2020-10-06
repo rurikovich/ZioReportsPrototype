@@ -33,18 +33,17 @@ object Main extends App {
     prog.provideSomeLayer[ZEnv](layers.live.appLayer).orDie
   }
 
-  def runHttp[R <: Clock](httpApp: HttpApp[RIO[R, *]],
-                          port: Int
-                         ): ZIO[R, Throwable, Unit] = {
+  def runHttp[R <: Clock](httpApp: HttpApp[RIO[R, *]], port: Int): ZIO[R, Throwable, Unit] = {
     type Task[A] = RIO[R, A]
-    ZIO.runtime[R].flatMap { implicit rts =>
-      BlazeServerBuilder
-        .apply[Task](rts.platform.executor.asEC)
-        .bindHttp(port, "0.0.0.0")
-        .withHttpApp(CORS(httpApp))
-        .serve
-        .compile[Task, Task, ExitCode]
-        .drain
+    ZIO.runtime[R].flatMap {
+      implicit rts: Runtime[R] =>
+        BlazeServerBuilder
+          .apply[Task](rts.platform.executor.asEC)
+          .bindHttp(port, "0.0.0.0")
+          .withHttpApp(CORS(httpApp))
+          .serve
+          .compile[Task, Task, ExitCode]
+          .drain
     }
   }
 

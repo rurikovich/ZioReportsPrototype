@@ -21,15 +21,24 @@ object ReportService {
 
     HttpRoutes.of[ReportTask] {
       case GET -> Root / LongVar(id) =>
-        for {
-          fiber <- ReportsRepository.getById(id).fork
-          report <- {
-            println(s"id=${id} fiber.id= ${fiber.id}")
-            fiber.join
-          }
-          response <- report.fold(NotFound())((x: Report) => Ok(x))
-        } yield response
+        getReportById(id).flatMap {
+          _.fold(NotFound())(x => Ok(x))
+        }
+
+
+
     }
 
   }
+
+  def getReportById[R <: ReportsRepository](id: Long): URIO[ReportsRepository, Option[Report]] = {
+    for {
+      fiber <- ReportsRepository.getById(id).fork
+      report <- {
+        println(s"id=${id} fiber.id= ${fiber.id}")
+        fiber.join
+      }
+    } yield report
+  }
+
 }
