@@ -5,9 +5,15 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import scala.io.StdIn
+import ru.infobis.mock.FatCalculation
 
-object AkkaHttpStarter {
+import scala.concurrent.Future
+import scala.io.StdIn
+import scala.util.{Failure, Success}
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+object AkkaHttpStarter extends FatCalculation {
 
   def main(args: Array[String]): Unit = {
 
@@ -18,16 +24,27 @@ object AkkaHttpStarter {
     val route =
       path("hello") {
         get {
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Say hello to akka-http</h1>"))
+          onComplete(veryLongAndFatReportByIdFuture()) {
+            case Success(value) => complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, value))
+            case Failure(ex) => complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, ex.getMessage))
+          }
+
+
         }
       }
 
-    val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
+    val bindingFuture = Http().newServerAt("localhost", 8081).bind(route)
 
-//    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    //    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete(_ => system.terminate()) // and shutdown when done
+  }
+
+  private def veryLongAndFatReportByIdFuture(): Future[String] = {
+    Future {
+      veryLongAndFatReportById(1, requestDurationInSeconds).map(_.body).getOrElse("")
+    }
   }
 }

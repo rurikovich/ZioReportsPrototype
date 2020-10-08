@@ -14,9 +14,7 @@ import ru.infobis.zio.reports.config._
 
 import ru.infobis.zio.reports.http.ReportService
 
-import scala.concurrent.duration._
-
-object Main extends App {
+object ZioHttpStarter extends App {
   type AppTask[A] = RIO[layers.AppEnv with Clock, A]
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ZExitCode] = {
@@ -40,7 +38,6 @@ object Main extends App {
       implicit rts: Runtime[R] =>
         BlazeServerBuilder
           .apply[Task](rts.platform.executor.asEC)
-          .withIdleTimeout(Duration.Inf)
           .bindHttp(port, "0.0.0.0")
           .withHttpApp(CORS(httpApp))
           .serve

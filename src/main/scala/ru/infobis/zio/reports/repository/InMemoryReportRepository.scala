@@ -1,29 +1,14 @@
 package ru.infobis.zio.reports.repository
 
-import java.time.LocalDateTime._
-
+import ru.infobis.mock.FatCalculation
 import ru.infobis.zio.reports._
 import zio._
+import zio.blocking._
 
 final private class InMemoryReportRepository()
-  extends ReportsRepository.Service {
+  extends ReportsRepository.Service with FatCalculation {
 
-  val requestDurationInSeconds = 60L
-
-  override def getById(id: Long): UIO[Option[Report]] = UIO.succeed(veryLongAndFatReportById(id, requestDurationInSeconds))
-
-  def veryLongAndFatReportById(id: Long, secondsToCalculateReport: Long): Option[Report] = {
-    val startTime = now()
-    val endTime = startTime.plusSeconds(secondsToCalculateReport)
-
-    var veryFatVar = (0 to 1000).foldLeft("")((res, i) => res + s"i=${i}_")
-    while (now() isBefore endTime) {
-      veryFatVar = veryFatVar + s"square=${Math.sqrt(111_231)}"
-      println(s"veryFatVar ")
-    }
-
-    Some(Report(id, veryFatVar))
-  }
+  override def getById(id: Long): RIO[Blocking, Option[Report]] = effectBlockingInterrupt(veryLongAndFatReportById(id, requestDurationInSeconds))
 
 }
 

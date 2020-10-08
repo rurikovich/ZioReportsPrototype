@@ -9,9 +9,11 @@ import zio.interop.catz._
 import ru.infobis.zio.reports.Report
 import ru.infobis.zio.reports.repository.ReportsRepository
 
+import zio.blocking._
+
 object ReportService {
 
-  def routes[R <: ReportsRepository](): HttpRoutes[RIO[R, ?]] = {
+  def routes[R <: ReportsRepository with Blocking](): HttpRoutes[RIO[R, ?]] = {
     type ReportTask[A] = RIO[R, A]
 
     val dsl: Http4sDsl[ReportTask] = Http4sDsl[ReportTask]
@@ -41,12 +43,31 @@ object ReportService {
     ZIO.interruptAs(fiberid)
   }
 
+  val blockingEffect: RIO[Blocking, Some[Report]] = effectBlockingInterrupt {
+    for (i <- 1 to 1000) {
+      Thread.sleep(1_000)
+      println(s"i=$i")
+    }
 
-  def getReportById[R <: ReportsRepository](id: Long): URIO[ReportsRepository, Option[Report]] = {
+    Some(Report(1, ""))
+  }
+
+  val timer: RIO[Blocking, Boolean] = effectBlocking {
+    Thread.sleep(10_000)
+    false
+  }
+
+
+  def getReportById[R <: ReportsRepository with Blocking](id: Long): RIO[ReportsRepository with Blocking, Option[Report]] = {
+
     for {
-      fiber <- ReportsRepository.getById(id).fork
+      fiber <- blockingEffect.fork
+      timerFiber <- timer.fork
+      valid <- timerFiber.join
+      _ <- if (!valid) fiber.interrupt else IO.unit
+
       report <- {
-        println(s"id=${id} fiber.id= ${fiber.id}")
+        println(s"id=$id fiber.id= ${fiber.id} $valid")
         fiber.join
       }
     } yield report
