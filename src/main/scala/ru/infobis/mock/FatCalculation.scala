@@ -7,7 +7,7 @@ import ru.infobis.zio.reports.Report
 
 trait FatCalculation {
 
-  val requestDurationInSeconds = 60L
+  val requestDurationInSeconds = 600L
 
   def veryLongAndFatReportById(id: Long, secondsToCalculateReport: Long): Option[Report] = {
     val startTime: LocalDateTime = now()
@@ -16,8 +16,8 @@ trait FatCalculation {
     var veryFatVar = (0 to 1000).foldLeft("")((res, i) => res + s"i=${i}_")
 
     var i = 0
-    while (now() isBefore endTime) {
-      Thread.sleep(1000)
+    while ((now() isBefore endTime) && !Thread.interrupted()) {
+//      Thread.sleep(100)
       veryFatVar = veryFatVar + s"square=${Math.sqrt(111_231)}"
       println(s"veryFatVar $i")
       i += 1

@@ -4,14 +4,14 @@ import io.circe.Encoder
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import ru.infobis.mock.FatCalculation
 import zio._
 import zio.interop.catz._
 import ru.infobis.zio.reports.Report
 import ru.infobis.zio.reports.repository.ReportsRepository
-
 import zio.blocking._
 
-object ReportService {
+object ReportService  extends FatCalculation{
 
   def routes[R <: ReportsRepository with Blocking](): HttpRoutes[RIO[R, ?]] = {
     type ReportTask[A] = RIO[R, A]
@@ -43,13 +43,10 @@ object ReportService {
     ZIO.interruptAs(fiberid)
   }
 
-  val blockingEffect: RIO[Blocking, Some[Report]] = effectBlockingInterrupt {
-    for (i <- 1 to 1000) {
-      Thread.sleep(1_000)
-      println(s"i=$i")
-    }
 
-    Some(Report(1, ""))
+
+  val blockingEffect: RIO[Blocking, Option[Report]] = effectBlockingInterrupt {
+    veryLongAndFatReportById(1,requestDurationInSeconds)
   }
 
   val timer: RIO[Blocking, Boolean] = effectBlocking {
@@ -64,7 +61,7 @@ object ReportService {
       fiber <- blockingEffect.fork
       timerFiber <- timer.fork
       valid <- timerFiber.join
-      _ <- if (!valid) fiber.interrupt else IO.unit
+      _ <- if (!valid) fiber.interrupt.fork else IO.unit
 
       report <- {
         println(s"id=$id fiber.id= ${fiber.id} $valid")
