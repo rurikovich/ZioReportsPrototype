@@ -14,8 +14,7 @@ import ru.infobis.zio.reports.config._
 
 import ru.infobis.zio.reports.http.ReportService
 
-
-object Main extends App {
+object ZioHttpStarter extends App {
   type AppTask[A] = RIO[layers.AppEnv with Clock, A]
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ZExitCode] = {
@@ -33,18 +32,17 @@ object Main extends App {
     prog.provideSomeLayer[ZEnv](layers.live.appLayer).orDie
   }
 
-  def runHttp[R <: Clock](httpApp: HttpApp[RIO[R, *]],
-                          port: Int
-                         ): ZIO[R, Throwable, Unit] = {
+  def runHttp[R <: Clock](httpApp: HttpApp[RIO[R, *]], port: Int): ZIO[R, Throwable, Unit] = {
     type Task[A] = RIO[R, A]
-    ZIO.runtime[R].flatMap { implicit rts =>
-      BlazeServerBuilder
-        .apply[Task](rts.platform.executor.asEC)
-        .bindHttp(port, "0.0.0.0")
-        .withHttpApp(CORS(httpApp))
-        .serve
-        .compile[Task, Task, ExitCode]
-        .drain
+    ZIO.runtime[R].flatMap {
+      implicit rts: Runtime[R] =>
+        BlazeServerBuilder
+          .apply[Task](rts.platform.executor.asEC)
+          .bindHttp(port, "0.0.0.0")
+          .withHttpApp(CORS(httpApp))
+          .serve
+          .compile[Task, Task, ExitCode]
+          .drain
     }
   }
 
