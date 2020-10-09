@@ -18,9 +18,9 @@ trait FatCalculation {
     var i = 0
     while ((now() isBefore endTime) && !Thread.interrupted()) {
       veryFatVar = veryFatVar + s"square=${Math.sqrt(111_231)}"
-      if (now().getSecond % 10 == 0) {
+//      if (now().getSecond % 10 == 0) {
         println(s"veryFatVar $i")
-      }
+//      }
       i += 1
     }
 

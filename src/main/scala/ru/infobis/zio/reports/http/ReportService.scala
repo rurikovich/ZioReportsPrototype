@@ -8,12 +8,15 @@ import ru.infobis.mock.FatCalculation
 import zio._
 import zio.interop.catz._
 import ru.infobis.zio.reports.Report
+import ru.infobis.zio.reports.fibers.FiberManager
 import ru.infobis.zio.reports.repository.ReportsRepository
 import zio.blocking._
 
-object ReportService  extends FatCalculation{
+object ReportService extends FatCalculation {
 
-  def routes[R <: ReportsRepository with Blocking](): HttpRoutes[RIO[R, ?]] = {
+  type ReportServiceType = ReportsRepository with FiberManager with Blocking
+
+  def routes[R <: ReportServiceType](): HttpRoutes[RIO[R, ?]] = {
     type ReportTask[A] = RIO[R, A]
 
     val dsl: Http4sDsl[ReportTask] = Http4sDsl[ReportTask]
@@ -28,43 +31,39 @@ object ReportService  extends FatCalculation{
         }
 
 
-      case GET -> Root / "interrupt" / LongVar(startTimeMillis) / LongVar(seqNumber) =>
-        interruptReportByFiberId(startTimeMillis, seqNumber).flatMap {
-          _ => Ok(s"fiber id=${Fiber.Id(startTimeMillis, seqNumber)} interrupted.")
+      case GET -> Root / "interrupt" / UUIDVar(uuid) =>
+        FiberManager.interruptFiber(uuid).flatMap {
+          _ => Ok(s"fiber uuid=$uuid interrupted.")
         }
+
+      case GET -> Root / "fibers" =>
+        FiberManager.listFibers().flatMap(list => Ok(list))
 
 
     }
 
   }
 
-  def interruptReportByFiberId[R <: ReportsRepository](startTimeMillis: Long, seqNumber: Long): UIO[Nothing] = {
+  def interruptReportByFiberId[R <: ReportServiceType](startTimeMillis: Long, seqNumber: Long): UIO[Nothing] = {
     val fiberid = Fiber.Id(startTimeMillis, seqNumber)
     ZIO.interruptAs(fiberid)
   }
 
 
-
   val blockingEffect: RIO[Blocking, Option[Report]] = effectBlockingInterrupt {
-    veryLongAndFatReportById(1,requestDurationInSeconds)
-  }
-
-  val timer: RIO[Blocking, Boolean] = effectBlocking {
-    Thread.sleep(10_000)
-    false
+    veryLongAndFatReportById(1, requestDurationInSeconds)
   }
 
 
-  def getReportById[R <: ReportsRepository with Blocking](id: Long): RIO[ReportsRepository with Blocking, Option[Report]] = {
+  def getReportById[R <: ReportServiceType](id: Long): RIO[ReportServiceType, Option[Report]] = {
 
     for {
-      fiber <- blockingEffect.fork
-      timerFiber <- timer.fork
-      valid <- timerFiber.join
-      _ <- if (!valid) fiber.interrupt.fork else IO.unit
+      fiber: Fiber.Runtime[Throwable, Option[Report]] <- blockingEffect.fork
+
+      _ <- FiberManager.addFiber(fiber)
 
       report <- {
-        println(s"id=$id fiber.id= ${fiber.id} $valid")
+        println(s"id=$id fiber.id= ${fiber.id} ")
         fiber.join
       }
     } yield report

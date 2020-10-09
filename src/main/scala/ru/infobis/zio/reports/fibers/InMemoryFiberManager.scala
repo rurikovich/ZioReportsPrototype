@@ -11,9 +11,9 @@ import scala.collection.concurrent._
 
 class InMemoryFiberManager extends Service {
 
-  val map: Map[UUID, Fiber[Throwable, Report]] = TrieMap()
+  val map: Map[UUID, Fiber[Throwable, Option[Report]]] = TrieMap()
 
-  override def addFiber(f: Fiber[Throwable, Report]): Task[UUID] = Task {
+  override def addFiber(f: Fiber[Throwable, Option[Report]]): Task[UUID] = Task {
     val uuid = UUID.randomUUID()
     map.addOne((uuid, f))
     uuid
@@ -21,7 +21,7 @@ class InMemoryFiberManager extends Service {
 
   override def listFibers(): Task[List[UUID]] = Task(map.keys.toList)
 
-  override def interruptFiber(uuid: UUID): Task[Exit[Throwable, Report]] =
+  override def interruptFiber(uuid: UUID): Task[Exit[Throwable, Option[Report]]] =
     map.get(uuid) match {
       case Some(f) => f.interrupt
       case None => fail(new Exception(""))
