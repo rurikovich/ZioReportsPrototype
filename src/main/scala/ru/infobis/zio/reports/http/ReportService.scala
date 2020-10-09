@@ -10,13 +10,10 @@ import zio.interop.catz._
 import ru.infobis.zio.reports.Report
 import ru.infobis.zio.reports.repository.ReportsRepository
 import zio.blocking._
-import zio.clock.Clock
 
 object ReportService  extends FatCalculation{
 
-  type ReportServiceType = ReportsRepository with Blocking with Clock
-
-  def routes[R <: ReportServiceType](): HttpRoutes[RIO[R, ?]] = {
+  def routes[R <: ReportsRepository with Blocking](): HttpRoutes[RIO[R, ?]] = {
     type ReportTask[A] = RIO[R, A]
 
     val dsl: Http4sDsl[ReportTask] = Http4sDsl[ReportTask]
@@ -58,12 +55,19 @@ object ReportService  extends FatCalculation{
   }
 
 
-  def getReportById[R <: ReportServiceType](id: Long): RIO[ReportServiceType, Option[Report]] = {
-    import zio.duration._
-    println(id)
+  def getReportById[R <: ReportsRepository with Blocking](id: Long): RIO[ReportsRepository with Blocking, Option[Report]] = {
+
     for {
-      report <- blockingEffect.timeout(10.seconds)
-    } yield report.flatten
+      fiber <- blockingEffect.fork
+      timerFiber <- timer.fork
+      valid <- timerFiber.join
+      _ <- if (!valid) fiber.interrupt.fork else IO.unit
+
+      report <- {
+        println(s"id=$id fiber.id= ${fiber.id} $valid")
+        fiber.join
+      }
+    } yield report
   }
 
 }
