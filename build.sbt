@@ -1,36 +1,15 @@
-addCommandAlias("build", "prepare; test")
-addCommandAlias("prepare", "fix; fmt")
-addCommandAlias("check", "fixCheck; fmtCheck")
-addCommandAlias("fix", "all compile:scalafix test:scalafix")
-addCommandAlias(
-  "fixCheck",
-  "compile:scalafix --check; test:scalafix --check"
-)
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias(
-  "fmtCheck",
-  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
-)
 
 scalafixDependencies in ThisBuild += "com.nequissimus" %% "sort-imports" % "0.5.4"
 
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging, DockerSpotifyClientPlugin)
   .settings(
-    packageName in Docker := "zio-todo",
-    dockerUsername in Docker := Some("grumpyraven"),
-    dockerExposedPorts in Docker := Seq(8080),
-    organization := "com.schuwalow",
-    name := "zio-todo-backend",
-    maintainer := "maxim.schuwalow@gmail.com",
-    licenses := Seq(
-      "MIT" -> url(
-        s"https://github.com/mschuwalow/${name.value}/blob/v${version.value}/LICENSE"
-      )
-    ),
-    scalaVersion := "2.13.3",
+    organization := "ru.infobis",
+    name := "ZioReportsPrototype",
+    scalaVersion := "2.12.12",
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     scalacOptions := Seq(
+      "-Ypartial-unification",
       "-feature",
       "-deprecation",
       "-explaintypes",
@@ -40,7 +19,6 @@ lazy val root = (project in file("."))
       "-language:higherKinds",
       "-language:existentials",
       "-Xfatal-warnings",
-      "-Xlint:-byname-implicit,_",
       "-Ywarn-value-discard",
       "-Ywarn-numeric-widen",
       "-Ywarn-extra-implicit",
@@ -87,45 +65,3 @@ lazy val root = (project in file("."))
       "com.typesafe.akka" %% "akka-actor-typed" % "2.6.9"
     )
   )
-
-//release
-{
-  import ReleaseTransformations._
-  import ReleasePlugin.autoImport._
-  import sbtrelease.{Git, Utilities}
-  import Utilities._
-
-  val releaseBranch = "develop"
-  val mergeBranch = "master"
-
-  val mergeReleaseVersion = ReleaseStep(action = st => {
-    val git = st.extract.get(releaseVcs).get.asInstanceOf[Git]
-    st.log.info(s"####### current branch: $releaseBranch")
-    git.cmd("checkout", mergeBranch) ! st.log
-    st.log.info(s"####### pull $mergeBranch")
-    git.cmd("pull") ! st.log
-    st.log.info(s"####### merge")
-    git.cmd("merge", releaseBranch, "--no-ff", "--no-edit") ! st.log
-    st.log.info(s"####### push")
-    git.cmd("push", "origin", s"$mergeBranch:$mergeBranch") ! st.log
-    st.log.info(s"####### checkout $releaseBranch")
-    git.cmd("checkout", releaseBranch) ! st.log
-    st
-  })
-
-  releaseProcess := Seq(
-    checkSnapshotDependencies,
-    inquireVersions,
-    runClean,
-    runTest,
-    setReleaseVersion,
-    commitReleaseVersion,
-    pushChanges,
-    tagRelease,
-    mergeReleaseVersion,
-    ReleaseStep(releaseStepTask(publish in Docker)),
-    setNextVersion,
-    commitNextVersion,
-    pushChanges
-  )
-}

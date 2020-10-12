@@ -15,7 +15,7 @@ class InMemoryFiberManager extends Service {
 
   override def addFiber(f: Fiber[Throwable, Option[Report]]): Task[UUID] = Task {
     val uuid = UUID.randomUUID()
-    map.addOne((uuid, f))
+    map.put(uuid, f)
     uuid
   }
 
