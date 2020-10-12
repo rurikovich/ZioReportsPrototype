@@ -26,9 +26,13 @@ object ReportService extends FatCalculation {
 
     HttpRoutes.of[ReportTask] {
       case GET -> Root / LongVar(id) =>
-        getReportById(id).flatMap {
-          _.fold(NotFound())(x => Ok(x))
-        }
+        for {
+          report <- getReportById(id).flatMap {
+            _.fold(NotFound())(x => Ok(x))
+          }.fork
+
+          res<-report.join
+        } yield res
 
 
       case GET -> Root / "interrupt" / UUIDVar(uuid) =>
@@ -50,15 +54,15 @@ object ReportService extends FatCalculation {
   }
 
 
-  val blockingEffect: RIO[Blocking, Option[Report]] = effectBlockingInterrupt {
-    veryLongAndFatReportById(1, requestDurationInSeconds)
+  def blockingEffect(id:Long): RIO[Blocking, Option[Report]] = effectBlockingInterrupt {
+    veryLongAndFatReportById(id, requestDurationInSeconds)
   }
 
 
   def getReportById[R <: ReportServiceType](id: Long): RIO[ReportServiceType, Option[Report]] = {
 
     for {
-      fiber: Fiber.Runtime[Throwable, Option[Report]] <- blockingEffect.fork
+      fiber: Fiber.Runtime[Throwable, Option[Report]] <- blockingEffect(id).fork
 
       _ <- FiberManager.addFiber(fiber)
 
