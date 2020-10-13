@@ -7,7 +7,7 @@ import zio.logging.slf4j.Slf4jLogger
 import ru.infobis.zio.reports.repository._
 import ru.infobis.zio.reports.config.{AppConfig, DatabaseConfig, HttpConfig}
 import ru.infobis.zio.reports.fibers.{FiberManager, InMemoryFiberManager}
-import ru.infobis.zio.reports.repository.InMemoryReportRepository
+
 
 object layers {
 
@@ -31,7 +31,7 @@ object layers {
       HttpConfig.fromAppConfig ++ DatabaseConfig.fromAppConfig ++ ZLayer.identity
 
     val layer2: ZLayer[Layer1Env, Throwable, Layer2Env] =
-      InMemoryReportRepository.layer ++ InMemoryFiberManager.layer ++ ZLayer.identity
+      MongoReportsRepository.layer ++ InMemoryFiberManager.layer ++ ZLayer.identity
 
     val appLayer: ZLayer[Blocking, Throwable, AppEnv] =
       layer0 >>> layer1 >>> layer2

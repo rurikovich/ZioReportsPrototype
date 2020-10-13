@@ -5,8 +5,7 @@ import ru.infobis.zio.reports._
 import zio._
 import zio.blocking._
 
-final private class InMemoryReportRepository()
-  extends ReportsRepository.Service with FatCalculation {
+final private class InMemoryReportRepository() extends ReportsRepository.Service with FatCalculation {
 
   override def getById(id: Long): RIO[Blocking, Option[Report]] = effectBlockingInterrupt(veryLongAndFatReportById(id, requestDurationInSeconds))
 

@@ -62,6 +62,8 @@ lazy val root = (project in file("."))
       "com.typesafe.akka" %% "akka-http" % "10.2.1",
       "com.typesafe.akka" %% "akka-stream" % "2.6.9",
       "com.typesafe.akka" %% "akka-actor" % "2.6.9",
-      "com.typesafe.akka" %% "akka-actor-typed" % "2.6.9"
+      "com.typesafe.akka" %% "akka-actor-typed" % "2.6.9",
+
+        "com.github.salat" %% "salat" % "1.11.2"
     )
   )

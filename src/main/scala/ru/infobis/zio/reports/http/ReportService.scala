@@ -62,10 +62,8 @@ object ReportService extends FatCalculation {
   def getReportById[R <: ReportServiceType](id: Long): RIO[ReportServiceType, Option[Report]] = {
 
     for {
-      fiber: Fiber.Runtime[Throwable, Option[Report]] <- blockingEffect(id).fork
-
+      fiber: Fiber.Runtime[Throwable, Option[Report]] <-  ReportsRepository.getById(id).fork
       _ <- FiberManager.addFiber(fiber)
-
       report <- {
         println(s"id=$id fiber.id= ${fiber.id} ")
         fiber.join
