@@ -9,15 +9,16 @@ import salat.dao._
 import com.mongodb.casbah.Imports._
 import cats.implicits._
 
-case class Message(@Key("_id") id: Long, text: String)
+case class Message(@Key("_id") id: Option[Long], sourceId: Long, mTime: Long, mType: Long, filterMessageType: Option[Long] = None)
 
-class MongoReportsRepository extends SalatDAO[Message, Long](collection = MongoClient()("local")("messages"))
+class MongoReportsRepository extends SalatDAO[Message, Long](collection = MongoClient(host = "10.0.14.211")("kdv")("messages"))
   with ReportsRepository.Service {
 
   override def getById(id: Long): RIO[Blocking, Option[Report]] = effectBlockingInterrupt {
-    find(ref = MongoDBObject("_id" -> MongoDBObject("$gte" -> id))).toList.some.map {
-      mList: List[Message] =>{
-        new Report(id, mList.toString)
+
+    count(MongoDBObject("_id" -> MongoDBObject("$gte" -> id))).some.map {
+      res => {
+        new Report(id, res.toString)
       }
     }
   }
