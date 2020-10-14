@@ -10,6 +10,8 @@ object FiberManager {
   trait Service {
     def addFiber(f: Fiber[Throwable, Option[Report]]): Task[UUID]
 
+    def removeFiber(uuid: UUID): Task[Option[Fiber[Throwable, Option[Report]]]]
+
     def listFibers(): Task[List[UUID]]
 
     def interruptFiber(uuid: UUID): Task[Exit[Throwable, Option[Report]]]
@@ -20,5 +22,7 @@ object FiberManager {
   def listFibers(): RIO[FiberManager, List[UUID]] = ZIO.accessM(_.get.listFibers())
 
   def interruptFiber(uuid: UUID): RIO[FiberManager, Exit[Throwable, Option[Report]]] = ZIO.accessM(_.get.interruptFiber(uuid))
+
+  def removeFiber(uuid: UUID): RIO[FiberManager, Option[Fiber[Throwable, Option[Report]]]] = ZIO.accessM(_.get.removeFiber(uuid))
 
 }

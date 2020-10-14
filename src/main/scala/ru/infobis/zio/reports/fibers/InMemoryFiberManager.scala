@@ -36,6 +36,9 @@ class InMemoryFiberManager extends Service {
       case None => fail(new Exception(""))
     }
 
+  override def removeFiber(uuid: UUID): Task[Option[Fiber[Throwable, Option[Report]]]] =  Task{
+    map.remove(uuid)
+  }
 }
 
 object InMemoryFiberManager {

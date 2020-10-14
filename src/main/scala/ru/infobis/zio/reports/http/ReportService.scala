@@ -63,11 +63,12 @@ object ReportService extends FatCalculation {
 
     for {
       fiber: Fiber.Runtime[Throwable, Option[Report]] <-  ReportsRepository.getById(id).fork
-      _ <- FiberManager.addFiber(fiber)
+      uuid <- FiberManager.addFiber(fiber)
       report <- {
         println(s"id=$id fiber.id= ${fiber.id} ")
         fiber.join
       }
+      _ <-FiberManager.removeFiber(uuid)
     } yield report
   }
 
