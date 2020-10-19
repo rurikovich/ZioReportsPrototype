@@ -1,5 +1,7 @@
 package ru.infobis.zio.reports.repository
 
+import java.util.UUID
+
 import cats.implicits._
 import com.mongodb.BasicDBObject
 import com.mongodb.casbah.Imports._
@@ -12,35 +14,6 @@ import salat.global._
 import zio.blocking.{Blocking, effectBlockingCancelable}
 import zio.{RIO, UIO, ZLayer}
 
-object TestCAsbah extends App {
-
-  val mongoClient: MongoClient = MongoClient(host = "10.0.14.214")
-  val dB: MongoDB = MongoDB(mongoClient, "admin")
-
-
-  val ops: DBObject = dB.getCollection("$cmd.sys.inprog").findOne(MongoDBObject("$all" -> true))
-  val activeOps: List[BasicDBObject] = getList[BasicDBObject](ops, "inprog").filter(_.getBoolean("active"))
-
-  val maxTimeRunningOp: BasicDBObject = activeOps.maxBy(op => op.getInt("secs_running"))
-
-
-  private val id: Int = maxTimeRunningOp.getInt("opid")
-  println(s"maxTimeRunningOp id = $id")
-  println(ops)
-
-  killOp(dB, id)
-
-
-  def getList[A](obj: DBObject, name: String): List[A] =
-    (List() ++ obj(name).asInstanceOf[BasicDBList]) map {
-      _.asInstanceOf[A]
-    }
-
-  def killOp(dB: MongoDB, op: Int): DBObject = {
-    dB.getCollection("$cmd.sys.killop").findOne(MongoDBObject("op" -> op))
-  }
-}
-
 
 case class Message(@Key("_id") id: Option[Long], sourceId: Long, mTime: Long, mType: Long, filterMessageType: Option[Long] = None)
 
@@ -48,6 +21,9 @@ class MongoReportsRepository() extends {
   private val client: MongoClient = MongoClient(host = "10.0.14.214")
 } with SalatDAO[Message, Long](collection = client("kdv")("messages"))
   with ReportsRepository.Service {
+
+  val uuid: UUID = UUID.randomUUID()
+  val reportId = s"reportId_$uuid"
 
   def killOp(dB: MongoDB, op: Int): DBObject = {
     dB.getCollection("$cmd.sys.killop").findOne(MongoDBObject("op" -> op))
@@ -59,7 +35,11 @@ class MongoReportsRepository() extends {
     }
 
   def findOpids(): Int = {
-    val mongoClient: MongoClient = MongoClient(host = "10.0.14.214")
+
+
+    val mongoClient: MongoClient = MongoClient(
+      host = "10.0.14.214"
+    )
     val dB: MongoDB = MongoDB(mongoClient, "admin")
 
 
@@ -74,24 +54,31 @@ class MongoReportsRepository() extends {
       val mongoClient: MongoClient = MongoClient(host = "10.0.14.214")
       val dB: MongoDB = MongoDB(mongoClient, "admin")
 
-
       val ops: DBObject = dB.getCollection("$cmd.sys.inprog").findOne(MongoDBObject("$all" -> true))
       val activeOps: List[BasicDBObject] = getList[BasicDBObject](ops, "inprog").filter(_.getBoolean("active"))
 
-      val maxTimeRunningOp: BasicDBObject = activeOps.maxBy(op => op.getInt("secs_running"))
+      val reportOps: List[BasicDBObject] = activeOps.filter(
+        (op: BasicDBObject) => {
+          val query: BasicDBObject = op("query").asInstanceOf[BasicDBObject]
+          val queryQuery: BasicDBObject = query("query").asInstanceOf[BasicDBObject]
+          queryQuery.contains(reportId)
+        }
+      )
 
+      reportOps.foreach {
+        op => killOp(dB, op.getInt("opid"))
+      }
 
-      val id: Int = maxTimeRunningOp.getInt("opid")
-      println(s"maxTimeRunningOp id = $id")
-      println(ops)
-
-      killOp(dB, id)
-      ()
     }
   }
 
   override def getById(id: Long): RIO[Blocking, Option[Report]] = effectBlockingCancelable {
-    count(MongoDBObject("_id" -> MongoDBObject("$gte" -> id))).some.map {
+    count(
+      MongoDBObject(
+        "_id" -> MongoDBObject("$gte" -> id),
+        reportId -> MongoDBObject("$exists" -> false)
+      )
+    ).some.map {
       res => {
         val ops = findOpids()
 
