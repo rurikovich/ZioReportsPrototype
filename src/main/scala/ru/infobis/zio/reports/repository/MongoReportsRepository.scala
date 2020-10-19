@@ -58,11 +58,11 @@ class MongoReportsRepository() extends {
       val activeOps: List[BasicDBObject] = getList[BasicDBObject](ops, "inprog").filter(_.getBoolean("active"))
 
       val reportOps: List[BasicDBObject] = activeOps.filter(
-        (op: BasicDBObject) => {
-          val query: BasicDBObject = op("query").asInstanceOf[BasicDBObject]
-          val queryQuery: BasicDBObject = query("query").asInstanceOf[BasicDBObject]
-          queryQuery.contains(reportId)
-        }
+        _.getAs[BasicDBObject]("query").flatMap {
+          _.getAs[BasicDBObject]("query").map {
+            _.contains(reportId)
+          }
+        }.getOrElse(false)
       )
 
       reportOps.foreach {
